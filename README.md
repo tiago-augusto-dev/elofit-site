@@ -98,7 +98,7 @@ npm run build
 
 O auditor de dependências aponta uma vulnerabilidade transitiva de desenvolvimento em `braces`, trazida pelo ESLint do Next.js. Não havia correção publicada compatível no momento da implementação; `npm audit --omit=dev` deve ser conferido separadamente. Não foi aplicado downgrade do Next.js nem uma versão inexistente para esconder o alerta.
 
-Sem métricas inventadas, publicação ou commits automáticos. Marca e domínio ainda precisam ser verificados.
+O código está publicado em [tiago-augusto-dev/elofit-site](https://github.com/tiago-augusto-dev/elofit-site). Não são apresentadas métricas inventadas. Marca e domínio ainda precisam ser verificados.
 
 ## Validação desta entrega (05/10/2026)
 
