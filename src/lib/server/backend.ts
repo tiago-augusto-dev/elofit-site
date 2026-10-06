@@ -46,10 +46,10 @@ export function sameOrigin(request: Request) {
   return request.headers.get("origin") === expected;
 }
 export async function backend(path: string, init: RequestInit = {}) {
-  const url = (process.env.BACKEND_URL ?? "http://127.0.0.1:8000").replace(
-    /\/$/,
-    "",
-  );
+  const configuredUrl = process.env.BACKEND_URL?.trim();
+  if (!configuredUrl)
+    throw new Error("Configure BACKEND_URL before starting EloFit.");
+  const url = configuredUrl.replace(/\/+$/, "");
   return fetch(`${url}/api/v1${path}`, {
     ...init,
     cache: "no-store",

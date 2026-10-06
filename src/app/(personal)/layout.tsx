@@ -34,6 +34,6 @@ export default async function Layout({
         <Button href="/painel">Tentar novamente</Button>
       </Box>
     );
-  if ((await identity.json()).role !== "personal") redirect("/login");
+  if ((await identity.json()).role !== "personal") redirect("/area-aluno");
   return <DashboardTemplate>{children}</DashboardTemplate>;
 }

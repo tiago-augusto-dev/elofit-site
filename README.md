@@ -13,6 +13,8 @@ Frontend do EloFit, projeto de portfólio Full Stack de Tiago Augusto. O persona
 - Busca, cadastro, edição e perfil do aluno; geração manual de convite.
 - Biblioteca de exercícios e prescrição com séries, repetições, carga, descanso e orientações.
 - Navegação responsiva, estados de carregamento, erro e ausência de dados, labels e navegação por teclado.
+- Login com escolha de Personal ou Aluno e recuperação/confirmação de e-mail por perfil.
+- Área do aluno em `/area-aluno`: prescrição, início e retomada de sessões, registro de repetições e carga por série, conclusão de exercícios e treinos e consulta do histórico.
 
 Indicadores e gráficos do estudo visual não são métricas reais e não foram preenchidos com números fictícios na aplicação. Painel do nutricionista, financeiro, evolução, edição/arquivamento de treinos e página pública serão entregas seguintes. O aplicativo React Native continua em um projeto separado.
 
@@ -35,6 +37,8 @@ APP_ORIGIN=http://localhost:3000
 SESSION_SECRET=<32 bytes em base64>
 ```
 
+`BACKEND_URL` é obrigatória e define o endereço do backend, sem `/api/v1`. Ela é lida apenas pelo servidor Next.js; o navegador continua usando as rotas do próprio site. Não use o prefixo `NEXT_PUBLIC_`. Reinicie o site após alterar `.env.local`. Não há endereço de API fixo como fallback.
+
 Com a API do repositório `elofit-backend` ativa:
 
 ```powershell
@@ -46,6 +50,8 @@ Abra **http://localhost:3000** e crie uma conta de personal ou use uma existente
 Para produção local: `npm run build` e `npm start`. Em implantação real, use HTTPS para o cookie Secure, segredo próprio e URL privada do backend.
 
 ## Organização
+
+O pacote de logos está em `public/brand`, com versões claras, escuras, transparentes e as pranchas de estudo e cores. Consulte `public/brand/README.md` para escolher o arquivo. O componente `Brand` utiliza as versões com fundo.
 
 ```text
 src/
@@ -68,6 +74,8 @@ tests/                  testes de sessão e fluxo no navegador
 ```
 
 Atomic Design organiza a interface. Regras de interação, schemas e consultas ficam por funcionalidade. Componentes MUI são usados diretamente quando um wrapper não acrescentaria uma convenção do produto.
+
+O aluno é cadastrado pelo personal e ativa sua senha pelo link do convite, que ainda é compartilhado manualmente. No login, selecione **Aluno**. O proxy permite ao aluno consultar seus treinos e registrar suas execuções; a API aplica o isolamento entre alunos e as regras de inadimplência. O aluno não acessa a gestão de alunos ou a prescrição do personal. Financeiro, dietas e escolha de nutricionista ainda não estão integrados nesta área do site. E-mails locais ficam no Mailpit, sem entrega externa.
 
 Next.js App Router + React + TypeScript; MUI/Emotion com cache SSR; TanStack Query; React Hook Form + Zod; openapi-fetch + openapi-typescript. A tipografia Inter é servida localmente. Recharts está reservado para quando os indicadores reais forem integrados. Não há tokens em localStorage nem variáveis públicas com segredos.
 
@@ -94,7 +102,7 @@ npm test
 npm run build
 ```
 
-`npm run test:e2e` exige backend isolado, um servidor Next.js em `E2E_BASE_URL` (padrão porta 3001), `APP_ORIGIN` correspondente, Microsoft Edge instalado e variáveis `E2E_ALLOW_WRITE=1`, `E2E_PASSWORD` com senha de teste de pelo menos 12 caracteres e `E2E_SESSION_SECRET` igual ao segredo desse servidor isolado. Os testes criam registros; não rode contra dados de produção. O cenário confere login, cookie HttpOnly, CSRF, refresh concorrente, isolamento de profissionais, aluno, exercício, prescrição, layout mobile, logout e links reais de e-mail no Mailpit. Capturas ficam em `test-results/`, ignorado pelo Git; traces estão desativados para evitar armazenar credenciais.
+`npm run test:e2e` exige backend isolado, um servidor Next.js em `E2E_BASE_URL` (padrão porta 3001), `APP_ORIGIN` correspondente, Microsoft Edge instalado e variáveis `E2E_ALLOW_WRITE=1`, `E2E_PASSWORD` com senha de teste de pelo menos 8 caracteres e `E2E_SESSION_SECRET` igual ao segredo desse servidor isolado. Os testes criam registros; não rode contra dados de produção. O cenário confere login, cookie HttpOnly, CSRF, refresh concorrente, isolamento de profissionais, aluno, exercício, prescrição, layout mobile, logout e links reais de e-mail no Mailpit. Capturas ficam em `test-results/`, ignorado pelo Git; traces estão desativados para evitar armazenar credenciais.
 
 O auditor de dependências aponta uma vulnerabilidade transitiva de desenvolvimento em `braces`, trazida pelo ESLint do Next.js. Não havia correção publicada compatível no momento da implementação; `npm audit --omit=dev` deve ser conferido separadamente. Não foi aplicado downgrade do Next.js nem uma versão inexistente para esconder o alerta.
 
@@ -103,3 +111,19 @@ O código está publicado em [tiago-augusto-dev/elofit-site](https://github.com/
 ## Validação desta entrega (05/10/2026)
 
 Build de produção, TypeScript e ESLint aprovados; quatro testes de unidade e dois cenários Playwright no Edge aprovados. Os fluxos integrados utilizaram FastAPI/PostgreSQL em banco temporário separado e SMTP local Mailpit. As capturas desktop/mobile foram inspecionadas. O banco e o container de validação foram removidos após os testes; dados de desenvolvimento foram preservados. O CI está configurado, mas não foi executado no GitHub.
+
+### Área do aluno — validação adicional
+Cinco testes de unidade aprovados e cenário Playwright do aluno aprovado com PostgreSQL local e dados novos de teste: login por perfil, cookie HttpOnly, bloqueio de acesso a outro aluno e à gestão do personal, início, gravação das séries, conclusão e persistência após recarregar, layout de 390 px e logout. O login da conta de aluno existente também foi conferido no Chrome do usuário. O cenário cria registros com e-mails únicos; utilize ambiente de teste e E2E_BACKEND_URL alinhado ao BACKEND_URL do site.
+
+
+A visualização do aluno usa cartões numerados sem imagens, dados da prescrição em colunas, orientações expansíveis e contagens reais. O botão de iniciar/continuar fica em painel lateral no desktop e no rodapé fixo no celular. Uma sessão em andamento pode ser retomada após recarregar a página.
+
+
+Registro e histórico possuem abas próprias. O registro mostra o progresso real, confirma o salvamento de séries e permite recolher exercícios; sessões concluídas são consultadas em modo de leitura. O histórico tem busca, filtro de status, grupos de sessões e paginação visual. Campos não salvos são mantidos ao alternar abas durante a mesma visita; recarregar a página preserva apenas dados salvos. Esta versão consulta todas as páginas de sessões antes de filtrar no navegador.
+
+
+### Menu da área do aluno
+
+A navegação de Treinos, Registro e Histórico usa ícones, destaque lima na aba ativa e foco visível para teclado. O menu permanece visível durante a rolagem e se adapta ao celular sem rolagem horizontal. Antes de selecionar uma sessão, uma orientação explica como liberar o Registro. A troca de abas continua preservando os campos em edição. O botão de saída inclui ícone e contorno para facilitar sua identificação.
+
+Validação: TypeScript, ESLint e teste integrado de execução e histórico, com capturas em desktop e celular.

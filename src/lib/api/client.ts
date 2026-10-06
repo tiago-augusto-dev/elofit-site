@@ -80,6 +80,8 @@ export function messageFor(error: unknown) {
   if (!(error instanceof ApiError))
     return "Não foi possível concluir. Confira a conexão e tente novamente.";
   const messages: Record<string, string> = {
+    INVALID_ORIGIN:
+      "O endereço do site não corresponde à configuração APP_ORIGIN. Confira a URL e reinicie o servidor após ajustar .env.local.",
     INVALID_CREDENTIALS: "E-mail ou senha incorretos.",
     EMAIL_NOT_VERIFIED: "Confirme seu e-mail antes de entrar.",
     VALIDATION_ERROR: "Confira os dados informados.",
@@ -89,6 +91,12 @@ export function messageFor(error: unknown) {
     TOO_MANY_AUTH_ATTEMPTS:
       "Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.",
     FORBIDDEN: "Você não tem permissão para esta ação.",
+    PLAN_ACCESS_SUSPENDED:
+      "Seu acesso aos treinos está suspenso. Entre em contato com seu personal para regularizar o plano.",
+    OPERATION_NOT_ALLOWED: "Seu perfil não permite realizar esta ação.",
+    BUSINESS_RULE_VIOLATION:
+      "Confira o estado do treino e os registros das séries antes de continuar.",
+    RESOURCE_NOT_FOUND: "Este registro não foi encontrado.",
     NOT_FOUND: "Este registro não foi encontrado.",
     EMAIL_ALREADY_EXISTS: "Este e-mail já está cadastrado.",
   };

@@ -11,19 +11,20 @@ import {
   writeSession,
 } from "@/lib/server/backend";
 const email = z.string().trim().email().max(254);
-const password = z.string().min(12).max(128);
+const password = z.string().min(8).max(128);
 const token = z.string().min(32).max(128);
+const role = z.enum(["personal", "student"]).default("personal");
 const schemas = {
-  login: z.object({ email, password: z.string().min(1).max(128) }),
+  login: z.object({ email, password: z.string().min(1).max(128), role }),
   register: z.object({
     name: z.string().trim().min(1).max(150),
     email,
     phone: z.string().max(30).nullable().optional(),
     password,
   }),
-  "forgot-password": z.object({ email }),
+  "forgot-password": z.object({ email, role }),
   "reset-password": z.object({ token, password }),
-  "request-email-verification": z.object({ email }),
+  "request-email-verification": z.object({ email, role }),
   "verify-email": z.object({ token }),
   activate: z.object({ token, password }),
 };
@@ -138,7 +139,7 @@ export async function POST(
       "forgot-password",
       "request-email-verification",
     ].includes(action)
-      ? { ...data, role: "personal" }
+      ? { ...data, role: "role" in data ? data.role : "personal" }
       : data;
     const path = action === "register" ? "/auth/personals" : `/auth/${action}`;
     const upstream = await backend(path, {

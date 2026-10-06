@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,6 +14,7 @@ import {
   Stack,
   TextField,
   Typography,
+  MenuItem,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { authAction, messageFor } from "@/lib/api/client";
@@ -41,7 +43,7 @@ const copy: Record<AuthMode, [string, string, string]> = {
   ],
   "reset-password": [
     "Crie uma nova senha",
-    "Use uma senha única com pelo menos 12 caracteres.",
+    "Use uma senha única com pelo menos 8 caracteres.",
     "Atualizar senha",
   ],
   "request-email-verification": [
@@ -65,7 +67,14 @@ export function AuthForm({
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [role, setRole] = useState<"personal" | "student">("personal");
+  const choosesRole = [
+    "login",
+    "forgot-password",
+    "request-email-verification",
+  ].includes(mode);
   const router = useRouter();
+  const cache = useQueryClient();
   const hasPassword = [
     "login",
     "register",
@@ -85,10 +94,10 @@ export function AuthForm({
       ? z
           .string()
           .min(
-            mode === "login" ? 1 : 12,
+            mode === "login" ? 1 : 8,
             mode === "login"
               ? "Informe sua senha."
-              : "Use pelo menos 12 caracteres.",
+              : "Use pelo menos 8 caracteres.",
           )
           .max(128)
       : z.string(),
@@ -108,13 +117,14 @@ export function AuthForm({
         mode === "register"
           ? data
           : mode === "login"
-            ? { email: data.email, password: data.password }
+            ? { email: data.email, password: data.password, role }
             : ["activate", "reset-password"].includes(mode)
               ? { token, password: data.password }
-              : { email: data.email };
+              : { email: data.email, role };
       await authAction(mode, payload);
       if (mode === "login") {
-        router.replace("/painel");
+        cache.clear();
+        router.replace(role === "student" ? "/area-aluno" : "/painel");
         router.refresh();
         return;
       }
@@ -133,7 +143,7 @@ export function AuthForm({
         setSuccess("Senha atualizada. Entre novamente com sua nova senha.");
       else if (mode === "activate")
         setSuccess(
-          "Conta ativada. Use o aplicativo do aluno para acessar seus treinos.",
+          "Conta ativada. Entre escolhendo o perfil Aluno para acessar seus treinos.",
         );
       else
         setSuccess(
@@ -151,7 +161,10 @@ export function AuthForm({
           variant="overline"
           sx={{ color: "#456B20", fontWeight: 700 }}
         >
-          ELOFIT · {mode === "activate" ? "ALUNO" : "PERSONAL"}
+          ELOFIT ·{" "}
+          {mode === "activate" || (choosesRole && role === "student")
+            ? "ALUNO"
+            : "PERSONAL"}
         </Typography>
         <Typography component="h1" variant="h3">
           {title}
@@ -174,6 +187,20 @@ export function AuthForm({
         </>
       ) : (
         <Stack component="form" spacing={2.5} onSubmit={submit} noValidate>
+          {choosesRole && (
+            <TextField
+              select
+              label="Perfil"
+              value={role}
+              onChange={(event) => {
+                setRole(event.target.value as "personal" | "student");
+                setError("");
+              }}
+            >
+              <MenuItem value="personal">Personal</MenuItem>
+              <MenuItem value="student">Aluno</MenuItem>
+            </TextField>
+          )}
           {mode === "register" && (
             <TextField
               label="Seu nome"
@@ -204,7 +231,7 @@ export function AuthForm({
               error={!!errors.password}
               helperText={
                 errors.password?.message ??
-                (mode === "login" ? undefined : "Entre 12 e 128 caracteres.")
+                (mode === "login" ? undefined : "Entre 8 e 128 caracteres.")
               }
               slotProps={{
                 input: {

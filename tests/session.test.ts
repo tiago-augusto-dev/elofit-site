@@ -43,4 +43,24 @@ describe("proxy boundary", () => {
     expect(permitted("students", "DELETE")).toBe(false);
     expect(permitted("students/http://evil.test", "GET")).toBe(false);
   });
+  it("isolates student routes and blocks professional operations", () => {
+    const id = "00000000-0000-4000-8000-000000000001";
+    const other = "00000000-0000-4000-8000-000000000002";
+    expect(permitted(`students/${id}/workouts`, "GET", "student", id)).toBe(
+      true,
+    );
+    expect(permitted(`students/${other}/workouts`, "GET", "student", id)).toBe(
+      false,
+    );
+    expect(permitted("students", "GET", "student", id)).toBe(false);
+    expect(permitted(`students/${id}/invitation`, "POST", "student", id)).toBe(
+      false,
+    );
+    expect(permitted(`workouts/${id}/sessions`, "POST", "student", id)).toBe(
+      true,
+    );
+    expect(permitted(`executions/${id}/sets`, "PUT", "student", id)).toBe(true);
+    expect(permitted(`executions/${id}/sets`, "PUT", "personal")).toBe(false);
+    expect(permitted(`sessions/${id}`, "GET", "nutritionist")).toBe(false);
+  });
 });

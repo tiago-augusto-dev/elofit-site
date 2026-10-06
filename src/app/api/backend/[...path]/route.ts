@@ -13,7 +13,10 @@ async function handle(
   if (!["GET", "HEAD"].includes(request.method) && !sameOrigin(request))
     return failure(403, "INVALID_ORIGIN", "Origem inválida.");
   const path = (await context.params).path.join("/");
-  if (!permitted(path, request.method))
+  if (
+    !permitted(path, request.method) &&
+    !permitted(path, request.method, "student", path.split("/")[1])
+  )
     return failure(404, "NOT_FOUND", "Rota não encontrada.");
   try {
     const session = await readSession();
@@ -25,8 +28,9 @@ async function handle(
     };
     const identity = await backend("/auth/me", { headers });
     if (!identity.ok) return relay(identity);
-    if ((await identity.json()).role !== "personal")
-      return failure(403, "FORBIDDEN", "Este painel é exclusivo do personal.");
+    const actor = await identity.json();
+    if (!permitted(path, request.method, actor.role, actor.student_id))
+      return failure(404, "NOT_FOUND", "Rota não encontrada.");
     const query = new URL(request.url).search;
     const body = request.method === "GET" ? undefined : await request.text();
     if (body && Buffer.byteLength(body) > 64_000)
